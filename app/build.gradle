@@ -17,7 +17,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.debug   // firmada con la clave debug para instalar directamente
+            signingConfig signingConfigs.debug   // signed with the debug key so it can be installed directly
         }
     }
 

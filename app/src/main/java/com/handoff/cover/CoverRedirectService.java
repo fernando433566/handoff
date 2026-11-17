@@ -32,22 +32,22 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Servicio de accesibilidad para usar el movil CERRADO desde la pantalla exterior:
+ * Accessibility service to use the phone CLOSED from the cover screen:
  *
- *  1. Redireccion: la pantalla de inicio de One UI abre las apps en la pantalla interior
- *     (apagada). Si con el movil cerrado aparece una app en la interior, se vuelve a
- *     lanzar en la exterior; Android mueve la tarea existente sin reiniciarla.
+ *  1. Redirection: One UI's home screen launches apps on the inner display (which is off
+ *     when folded). If an app appears on the inner display while folded, it is relaunched
+ *     on the cover display; Android moves the existing task without restarting it.
  *
- *  2. Navegacion en la pantalla exterior (solo cerrado y desbloqueado):
- *     - Barra con botones  Atras / Inicio (One UI) / Apps (lanzador propio).
- *     - Gestos: deslizar desde el borde izquierdo o derecho = Atras;
- *               deslizar hacia arriba desde el borde inferior = Inicio.
+ *  2. Navigation on the cover screen (only when folded and unlocked):
+ *     - Bar with Recents / Home (One UI) / Back / Apps (own launcher) buttons.
+ *     - Gestures: swipe in from the left or right edge = Back;
+ *                 swipe up from the bottom edge = Home.
  */
 public class CoverRedirectService extends AccessibilityService implements DisplayManager.DisplayListener {
 
     private static final int COVER = LauncherActivity.COVER_DISPLAY_ID;
 
-    /** Paquetes que nunca se redirigen. */
+    /** Packages that are never redirected. */
     private static final Set<String> IGNORE = new HashSet<>(Arrays.asList(
             "android",
             "com.android.systemui",
@@ -65,14 +65,14 @@ public class CoverRedirectService extends AccessibilityService implements Displa
     private final List<View> overlays = new ArrayList<>();
     private boolean overlaysShown;
 
-    // ---------------------------------------------------------------- ciclo de vida
+    // ---------------------------------------------------------------- lifecycle
 
     @Override
     protected void onServiceConnected() {
         displayManager = getSystemService(DisplayManager.class);
         keyguard = getSystemService(KeyguardManager.class);
         displayManager.registerDisplayListener(this, main);
-        main.post(poll);   // comprobacion periodica (bloqueo de la pantalla exterior no avisa)
+        main.post(poll);   // periodic check (the cover screen lock does not send any event)
     }
 
     @Override
@@ -88,7 +88,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
     @Override public void onDisplayRemoved(int displayId) { updateOverlays(); }
     @Override public void onDisplayChanged(int displayId) { updateOverlays(); }
 
-    /** Cerrado = pantalla interior apagada y exterior encendida. */
+    /** Folded = inner display off and cover display on. */
     private boolean isFolded() {
         if (displayManager == null) return false;
         Display inner = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
@@ -98,7 +98,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
                 && cover.getState() == Display.STATE_ON;
     }
 
-    // ---------------------------------------------------------------- redireccion
+    // ---------------------------------------------------------------- redirection
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -110,18 +110,18 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         if (pkgCs == null) return;
         String pkg = pkgCs.toString();
         if (IGNORE.contains(pkg) || pkg.equals(getPackageName())) return;
-        Recents.touch(this, pkg);   // lista propia de apps usadas recientemente
+        Recents.touch(this, pkg);   // own list of recently used apps
         if (event.getDisplayId() != Display.DEFAULT_DISPLAY) return;
         if (!isFolded()) return;
 
-        // Evitar bucles: como mucho una redireccion por app cada 2 s
+        // Avoid loops: at most one redirection per app every 2 s
         long now = SystemClock.elapsedRealtime();
         Long last = lastRedirect.get(pkg);
         if (last != null && now - last < 2000) return;
 
         PackageManager pm = getPackageManager();
         Intent launch = pm.getLaunchIntentForPackage(pkg);
-        if (launch == null) return;  // solo apps con icono
+        if (launch == null) return;  // only apps with a launcher icon
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
         if (startOnCover(launch)) lastRedirect.put(pkg, now);
     }
@@ -137,7 +137,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         }
     }
 
-    // ---------------------------------------------------------------- acciones
+    // ---------------------------------------------------------------- actions
 
     private void goBack() {
         performGlobalAction(GLOBAL_ACTION_BACK);
@@ -147,11 +147,11 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         LauncherActivity.openOneUiHome(this, COVER);
     }
 
-    /** Vista "Aplicaciones recientes" de One UI (la del boton |||). */
+    /** One UI's "Recent apps" view (the ||| button). */
     private static final android.content.ComponentName ONE_UI_RECENTS = new android.content.ComponentName(
             "com.sec.android.app.launcher", "com.android.quickstep.RecentsActivity");
 
-    /** Abre los Recientes de One UI en la pantalla exterior; si falla, la lista propia. */
+    /** Opens One UI's Recents on the cover screen; falls back to the own list. */
     private void openRecents() {
         Intent r = new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_DEFAULT)
@@ -169,9 +169,9 @@ public class CoverRedirectService extends AccessibilityService implements Displa
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
-    // ---------------------------------------------------------------- superposiciones
+    // ---------------------------------------------------------------- overlays
 
-    /** Metricas de la pantalla exterior (su densidad es distinta a la de la interior). */
+    /** Cover display metrics (its density differs from the inner display). */
     private android.util.DisplayMetrics coverMetrics;
 
     private int dp(float v) {
@@ -180,16 +180,16 @@ public class CoverRedirectService extends AccessibilityService implements Displa
     }
 
     /**
-     * True si en la pantalla exterior hay una app en primer plano. Si la ventana de app
-     * superior es de la interfaz de Samsung (inicio o bloqueo de la pantalla exterior),
-     * devuelve false para no dibujar la barra encima.
+     * True if an app is in the foreground on the cover screen. If the top application
+     * window belongs to Samsung's UI (cover home or cover lock screen), returns false so
+     * the bar is not drawn on top of it.
      */
     private boolean coverAppInFront() {
         try {
             android.util.SparseArray<List<android.view.accessibility.AccessibilityWindowInfo>> all = getWindowsOnAllDisplays();
             List<android.view.accessibility.AccessibilityWindowInfo> ws = all.get(COVER);
             if (ws == null) return false;
-            for (android.view.accessibility.AccessibilityWindowInfo w : ws) {   // de arriba a abajo
+            for (android.view.accessibility.AccessibilityWindowInfo w : ws) {   // top to bottom
                 if (w.getType() != android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION) continue;
                 android.view.accessibility.AccessibilityNodeInfo root = w.getRoot();
                 CharSequence pkg = root != null ? root.getPackageName() : null;
@@ -220,7 +220,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
                 .createWindowContext(WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, null);
         coverWm = wc.getSystemService(WindowManager.class);
         coverMetrics = wc.getResources().getDisplayMetrics();
-        // Zona ocupada por el modulo de camaras (recorte inferior derecho de la pantalla exterior)
+        // Area taken by the camera module (bottom-right cutout of the cover screen)
         int camLeft = Integer.MAX_VALUE, camTop = Integer.MAX_VALUE;
         android.view.DisplayCutout cut = cover.getCutout();
         if (cut != null) {
@@ -232,18 +232,18 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         }
         android.graphics.Point size = new android.graphics.Point();
         cover.getRealSize(size);
-        int bottomStripWidth = camLeft == Integer.MAX_VALUE ? size.x : camLeft;      // hasta las camaras
-        int rightStripHeight = camTop == Integer.MAX_VALUE ? size.y : camTop;        // por encima de las camaras
+        int bottomStripWidth = camLeft == Integer.MAX_VALUE ? size.x : camLeft;      // up to the cameras
+        int rightStripHeight = camTop == Integer.MAX_VALUE ? size.y : camTop;        // above the cameras
         try {
-            // Bordes para gestos (se anaden primero para que la barra quede encima)
+            // Gesture edges (added first so the button bar stays on top)
             addOverlay(wc, edgeStrip(wc, Edge.LEFT), Gravity.START | Gravity.TOP, dp(10), WindowManager.LayoutParams.MATCH_PARENT);
             addOverlay(wc, edgeStrip(wc, Edge.RIGHT), Gravity.END | Gravity.TOP, dp(10), rightStripHeight);
             addOverlay(wc, edgeStrip(wc, Edge.BOTTOM), Gravity.BOTTOM | Gravity.START, bottomStripWidth, dp(10));
-            // Barra de botones: abajo a la izquierda, fuera de la zona de las camaras
+            // Button bar: bottom-left, outside the camera area
             WindowManager.LayoutParams lp = params(Gravity.BOTTOM | Gravity.START,
                     WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
             android.content.SharedPreferences sp = getSharedPreferences("nav", MODE_PRIVATE);
-            lp.x = sp.getInt("x", dp(6));   // por defecto: a la izquierda de las camaras
+            lp.x = sp.getInt("x", dp(6));   // default: left of the cameras
             lp.y = sp.getInt("y", dp(4));
             View bar = navBar(wc, lp);
             coverWm.addView(bar, lp);
@@ -283,10 +283,10 @@ public class CoverRedirectService extends AccessibilityService implements Displa
     private View navBar(Context c, WindowManager.LayoutParams lp) {
         LinearLayout bar = new LinearLayout(c);
         bar.setOrientation(LinearLayout.HORIZONTAL);
-        // Sin fondo, como la barra de One UI: los iconos llevan halo claro para verse en cualquier fondo
+        // No background, like One UI's bar: icons have a light halo to be visible on any content
         bar.setPadding(dp(2), 0, dp(2), 0);
         bar.addView(dragHandle(c, bar, lp));
-        // Mismo orden que One UI: Recientes | Inicio | Atras  (+ cajon de apps)
+        // Same order as One UI: Recents | Home | Back  (+ app drawer)
         bar.addView(navButton(c, R.drawable.ic_nav_recents, R.string.nav_recents, v -> openRecents()));
         bar.addView(navButton(c, R.drawable.ic_nav_home, R.string.nav_home, v -> goHome()));
         bar.addView(navButton(c, R.drawable.ic_nav_back, R.string.nav_back, v -> goBack()));
@@ -300,7 +300,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         b.setContentDescription(c.getString(description));
         b.setScaleType(android.widget.ImageView.ScaleType.CENTER_INSIDE);
         b.setPadding(dp(6), dp(5), dp(6), dp(5));
-        // Respuesta tactil circular, como los botones de One UI
+        // Circular touch ripple, like One UI's buttons
         android.util.TypedValue tv = new android.util.TypedValue();
         c.getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, tv, true);
         if (tv.resourceId != 0) b.setBackgroundResource(tv.resourceId);
@@ -309,7 +309,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
         return b;
     }
 
-    /** Asa para arrastrar la barra (gravedad BOTTOM|START: y crece hacia arriba). Guarda la posicion. */
+    /** Handle to drag the bar (gravity BOTTOM|START: y grows upwards). Saves the position. */
     @SuppressLint("ClickableViewAccessibility")
     private View dragHandle(Context c, View bar, WindowManager.LayoutParams lp) {
         android.widget.ImageView h = new android.widget.ImageView(c);
@@ -340,7 +340,7 @@ public class CoverRedirectService extends AccessibilityService implements Displa
 
     private enum Edge { LEFT, RIGHT, BOTTOM }
 
-    /** Franja invisible en un borde que convierte un deslizamiento hacia dentro en Atras / Inicio. */
+    /** Invisible edge strip that turns an inward swipe into Back / Home. */
     @SuppressLint("ClickableViewAccessibility")
     private View edgeStrip(Context c, Edge edge) {
         View v = new View(c);

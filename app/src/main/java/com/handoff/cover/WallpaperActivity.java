@@ -20,22 +20,22 @@ import android.widget.Toast;
 import java.io.InputStream;
 
 /**
- * Establece el fondo de la pantalla exterior (el que se ve detras de One UI cuando se abre
- * en la Flex Window). Se puede llegar aqui:
- *  - desde el boton "Fondo" del lanzador (elegir imagen o copiar el de la pantalla interior),
- *  - compartiendo una imagen desde la Galeria ("Pantalla exterior").
+ * Sets the cover screen wallpaper (the one shown behind One UI when it runs on the Flex
+ * Window). Reachable from:
+ *  - the launcher's "Fondo" button (pick an image or copy the inner screen wallpaper),
+ *  - sharing an image from the Gallery.
  *
- * Samsung guarda un fondo propio para la pantalla exterior; en la API se identifica con el
- * flag 16 (pantalla secundaria) combinado con FLAG_SYSTEM.
+ * Samsung keeps a separate wallpaper for the cover screen; in the API it is selected with
+ * flag 16 (sub display) combined with FLAG_SYSTEM.
  */
 public class WallpaperActivity extends Activity {
 
-    /** Flag de Samsung para el fondo de la pantalla exterior. */
+    /** Samsung flag for the cover (sub) display wallpaper. */
     static final int SAMSUNG_FLAG_SUB_DISPLAY = 16;
-    /** Flag de Samsung para el fondo de la pantalla principal (interior). */
+    /** Samsung flag for the main (inner) display wallpaper. */
     static final int SAMSUNG_FLAG_MAIN_DISPLAY = 4;
     private static final int REQ_PICK = 1;
-    /** Extra para copiar directamente el fondo de la pantalla interior (sin dialogo). */
+    /** Extra to copy the inner screen wallpaper directly (no dialog). */
     static final String EXTRA_COPY_INNER = "copy_inner";
 
     @Override
@@ -90,7 +90,7 @@ public class WallpaperActivity extends Activity {
                 Bitmap b = BitmapFactory.decodeStream(is);
                 msg = b == null ? getString(R.string.wp_error, "imagen no válida") : setCoverWallpaper(b);
             } catch (Exception e) {
-                android.util.Log.w("CoverWallpaper", "fallo al aplicar", e);
+                android.util.Log.w("CoverWallpaper", "failed to apply wallpaper", e);
                 msg = getString(R.string.wp_error, e.getMessage());
             }
             final String m = msg;
@@ -98,25 +98,25 @@ public class WallpaperActivity extends Activity {
         }).start();
     }
 
-    /** Copia el fondo actual de la pantalla interior (puede requerir permiso de almacenamiento). */
+    /** Copies the current inner screen wallpaper (may require the all-files storage permission). */
     private void copyInnerWallpaper() {
         new Thread(() -> {
             String msg;
             try {
-                // Samsung devuelve el fondo de la pantalla del contexto: usar un contexto de la interior
+                // Samsung returns the wallpaper of the context's display: use an inner display context
                 Display inner = getSystemService(DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
                 android.content.Context innerCtx = inner != null ? createDisplayContext(inner) : this;
                 WallpaperManager wmInner = WallpaperManager.getInstance(innerCtx);
                 Drawable d;
                 try {
-                    // Samsung: 4 = pantalla principal (interior). FLAG_SYSTEM|4 = fondo de inicio interior
+                    // Samsung: 4 = main (inner) display. FLAG_SYSTEM|4 = inner home wallpaper
                     d = wmInner.getDrawable(WallpaperManager.FLAG_SYSTEM | SAMSUNG_FLAG_MAIN_DISPLAY);
                 } catch (Exception e) {
                     d = wmInner.getDrawable(WallpaperManager.FLAG_SYSTEM);
                 }
                 msg = d == null ? getString(R.string.wp_error, "sin fondo") : setCoverWallpaper(toBitmap(d));
             } catch (Exception e) {
-                android.util.Log.w("CoverWallpaper", "no se pudo leer el fondo interior", e);
+                android.util.Log.w("CoverWallpaper", "could not read the inner screen wallpaper", e);
                 msg = getString(R.string.wp_copy_denied);
             }
             final String m = msg;
@@ -133,7 +133,7 @@ public class WallpaperActivity extends Activity {
         return b;
     }
 
-    /** Recorta la imagen al tamano de la pantalla exterior (centrada) y la aplica. */
+    /** Center-crops the image to the cover screen size and applies it. */
     private String setCoverWallpaper(Bitmap src) throws Exception {
         Point size = new Point(748, 720);
         Display cover = getSystemService(DisplayManager.class).getDisplay(LauncherActivity.COVER_DISPLAY_ID);

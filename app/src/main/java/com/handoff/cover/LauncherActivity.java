@@ -32,17 +32,16 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Lanzador pensado para la pantalla exterior (Flex Window) del Galaxy Z Flip.
- * Muestra las apps instaladas y las abre en la MISMA pantalla en la que se esta
- * mostrando el lanzador. Si una app ya estaba abierta en la pantalla interior,
- * Android la trae a la exterior.
+ * Launcher designed for the Galaxy Z Flip cover screen (Flex Window).
+ * Lists installed apps and opens them on the SAME display the launcher is shown on.
+ * If an app was already open on the inner display, Android moves it to the cover.
  */
 public class LauncherActivity extends Activity {
 
-    /** Id de la pantalla exterior en el Z Flip 5 (pantalla interior = 0). */
+    /** Cover display id on the Z Flip 5 (inner display = 0). */
     static final int COVER_DISPLAY_ID = 1;
 
-    /** Modo de la lista: todas las apps o solo las usadas recientemente. */
+    /** List mode: all apps or only recently used ones. */
     static final String EXTRA_MODE = "mode";
     static final int MODE_ALL = 0;
     static final int MODE_RECENTS = 1;
@@ -82,7 +81,7 @@ public class LauncherActivity extends Activity {
         root.setBackgroundColor(0xFF000000);
         root.setPadding(dp(6), dp(6), dp(6), dp(6));
 
-        // Barra superior: buscador + boton para mover el lanzador a la otra pantalla
+        // Top bar: search box + buttons (One UI, wallpaper, move launcher to the other display)
         LinearLayout bar = new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
@@ -127,7 +126,7 @@ public class LauncherActivity extends Activity {
         adapter = new AppAdapter();
         grid.setAdapter(adapter);
         grid.setOnItemClickListener((parent, view, position, id) -> launch(shownApps.get(position)));
-        // En Recientes, mantener pulsado quita la app de la lista
+        // In Recents mode, long-press removes the app from the list
         grid.setOnItemLongClickListener((parent, view, position, id) -> {
             if (mode != MODE_RECENTS) return false;
             Recents.remove(this, shownApps.get(position).component.getPackageName());
@@ -199,7 +198,7 @@ public class LauncherActivity extends Activity {
         String t = text.trim().toLowerCase(Locale.ROOT);
         shownApps.clear();
         if (mode == MODE_RECENTS) {
-            // Orden de uso reciente; una entrada por app
+            // Most recently used first; one entry per app
             for (String pkg : Recents.get(this)) {
                 for (AppEntry e : allApps) {
                     if (e.component.getPackageName().equals(pkg)) {
@@ -217,7 +216,7 @@ public class LauncherActivity extends Activity {
         updateStatus();
     }
 
-    /** Abre la app en la pantalla donde esta ahora el lanzador. */
+    /** Opens the app on the display the launcher is currently on. */
     private void launch(AppEntry e) {
         Intent i = new Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
@@ -232,11 +231,11 @@ public class LauncherActivity extends Activity {
         }
     }
 
-    /** Componente de la pantalla de inicio de One UI (Samsung). */
+    /** Component of Samsung's One UI home screen. */
     static final ComponentName ONE_UI_HOME = new ComponentName(
             "com.sec.android.app.launcher", "com.sec.android.app.launcher.activities.LauncherActivity");
 
-    /** Abre la pantalla de inicio de One UI en la pantalla indicada. */
+    /** Opens the One UI home screen on the given display. */
     static void openOneUiHome(android.content.Context ctx, int displayId) {
         Intent i = new Intent(Intent.ACTION_MAIN)
                 .setComponent(ONE_UI_HOME)
@@ -250,7 +249,7 @@ public class LauncherActivity extends Activity {
         }
     }
 
-    /** Vuelve a abrir el lanzador en la otra pantalla (interior <-> exterior). */
+    /** Reopens the launcher on the other display (inner <-> cover). */
     private void moveSelfToOtherDisplay() {
         int target = currentDisplayId() == COVER_DISPLAY_ID ? Display.DEFAULT_DISPLAY : COVER_DISPLAY_ID;
         Intent i = new Intent(this, LauncherActivity.class)

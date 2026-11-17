@@ -9,9 +9,9 @@ import android.content.Intent;
 import android.widget.RemoteViews;
 
 /**
- * Widget para la pantalla exterior con dos botones:
- *  - "One UI": abre la pantalla de inicio de Samsung en la pantalla exterior.
- *  - "Apps":   abre la cuadricula de apps de esta aplicacion en la pantalla exterior.
+ * Cover screen widget with two buttons:
+ *  - "One UI": opens Samsung's One UI home screen on the cover screen.
+ *  - "Apps":   opens this app's app grid on the cover screen.
  */
 public class CoverWidgetProvider extends AppWidgetProvider {
 

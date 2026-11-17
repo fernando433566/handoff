@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Lista propia de apps usadas recientemente (la vista de Recientes de Samsung no se
- * abre en la pantalla exterior). La alimenta el servicio de accesibilidad cada vez que
- * una app pasa a primer plano. Se guarda solo el nombre del paquete.
+ * Own list of recently used apps, used as a fallback when One UI's Recents view cannot be
+ * opened on the cover screen. Fed by the accessibility service every time an app comes to
+ * the foreground. Only package names are stored.
  */
 final class Recents {
     private static final String PREFS = "recents";
@@ -26,7 +26,7 @@ final class Recents {
         return out;
     }
 
-    /** Mueve el paquete al principio de la lista. */
+    /** Moves the package to the front of the list. */
     static void touch(Context c, String pkg) {
         List<String> l = get(c);
         if (!l.isEmpty() && l.get(0).equals(pkg)) return;
