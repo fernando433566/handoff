@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pantalla exterior</string>
+    <string name="widget_name">Pantalla exterior: One UI / Apps</string>
+    <string name="search_hint">Buscar app…</string>
+    <string name="one_ui">One UI</string>
+    <string name="apps">Apps</string>
+    <string name="to_cover">A exterior</string>
+    <string name="to_inner">A interior</string>
+    <string name="loading">Cargando apps…</string>
+    <string name="on_cover">pantalla exterior</string>
+    <string name="on_inner">pantalla interior</string>
+    <string name="status_fmt">En %1$s · %2$d apps</string>
+    <string name="status_recents_fmt">Recientes en %1$s · %2$d apps (mantén pulsado para quitar)</string>
+    <string name="launch_error">No se pudo abrir: %1$s</string>
+    <string name="a11y_name">Pantalla exterior: abrir apps fuera</string>
+    <string name="a11y_description">Con el móvil cerrado, mueve a la pantalla exterior las apps que se abran en la pantalla interior (por ejemplo, desde el inicio de One UI). Solo consulta qué app está en primer plano en la pantalla exterior; no guarda ni envía el contenido de la pantalla.</string>
+    <string name="nav_recents">Aplicaciones recientes</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_back">Atrás</string>
+    <string name="nav_apps">Todas las apps</string>
+    <string name="nav_drag">Arrastrar la barra</string>
+    <string name="wallpaper">Fondo</string>
+    <string name="wp_share_label">Fondo de la pantalla exterior</string>
+    <string name="wp_title">Fondo de la pantalla exterior</string>
+    <string name="wp_pick">Elegir imagen…</string>
+    <string name="wp_copy_inner">Usar el mismo que la pantalla interior</string>
+    <string name="wp_done">Fondo de la pantalla exterior cambiado</string>
+    <string name="wp_error">No se pudo cambiar el fondo: %1$s</string>
+    <string name="wp_copy_denied">Android no permite leer el fondo de la pantalla interior. Elige la imagen desde la galería.</string>
+</resources>
